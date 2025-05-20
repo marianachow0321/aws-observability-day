@@ -1,23 +1,51 @@
-## One Observability Demo
+## About This Fork
+   
+This fork extends the [aws-samples/one-observability-demo](https://github.com/aws-samples/one-observability-demo) by adding:
+- Temporarily fixing the compatibility issue for psycopg and otel exporters
 
-This repo contains a sample application which is used in the One Observability Demo workshop here - https://observability.workshop.aws/
+## 1. Rebuild Docker Image for petadoptionshistory-py
 
-## Security
+The Python-based Pet Adoption History service has been updated and requires rebuilding the Docker image.
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+### Steps to rebuild the Docker image:
 
-## Instructions
+1. Navigate to the petadoptionshistory-py directory:
+   ```bash
+   cd PetAdoptions/petadoptionshistory-py/
+   ```
 
-To deploy this workshop on your own account you need to have an IAM role with elevated priviliges and the `aws-cli` installed. Then, from the root
-of the repository run the following command:
+2. Retrieve the ECR repository
+   ```bash
+   $AWS_REGION="us-east-2"
+   PETHISTORYECR=$(aws ssm get-parameter --name '/petstore/pethistoryrepositoryuri' | jq -r .Parameter.Value)
+   aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $PETHISTORYECR
+   ```
 
-```
-aws cloudformation create-stack --stack-name Observability-Workshop --template-body file://codepipeline-stack.yaml --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=UserRoleArn,ParameterValue=$(aws iam get-role --role-name $(aws sts get-caller-identity --query Arn --output text | awk -F/ '{print $(NF-1)}') --query Role.Arn --output text)
-```
+3. Build and push the Docker image to ECR
+   ```bash
+      docker build -t pet-adoptions-history:latest .
+      docker tag pet-adoptions-history:latest $PETHISTORYECR:latest
+      docker push $PETHISTORYECR:latest
+   ```
 
-You can replace the role specified in the paramter `UserRoleArn` with any other role with access to AWS CloudShell if you need so.
+## 2. Redeploy OpenTelemetry Collector Configuration
 
-## License
+The OpenTelemetry collector configuration has been updated and needs to be redeployed to your EKS cluster.
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+### Steps to redeploy the otel-collector-config.yaml:
 
+1. Ensure you have kubectl configured to connect to your EKS cluster:
+   ```bash
+   aws eks update-kubeconfig --name PetSite --region $AWS_REGION
+   kubectl get nodes
+   ```
+
+2. Apply the updated OpenTelemetry collector configuration:
+   ```bash
+   kubectl apply -f PetAdoptions/petadoptionshistory-py/otel-collector-config.yaml
+   ```
+
+3. Verify the ConfigMap was updated:
+   ```bash
+   kubectl get configmap otel-config -n default -o yaml
+   ```
