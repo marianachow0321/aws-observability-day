@@ -64,15 +64,29 @@ db = psycopg2.connect(**conn_params)
 
 @app.route('/petadoptionshistory/api/home/transactions', methods=['GET'])
 def transactions_get():
-    transactions = repository.list_transaction_history(db)
-    return jsonify(transactions)
+    with tracer.start_as_current_span("transactions_get") as span:
+        span.set_attribute("service.name", "petadoptionshistory")
+        span.set_attribute("operation", "get_transactions")
+        transactions = repository.list_transaction_history(db)
+        span.set_attribute("transaction_count", len(transactions))
+        return jsonify(transactions)
 
 @app.route('/petadoptionshistory/api/home/transactions', methods=['DELETE'])
 def transactions_delete():
-    repository.delete_transaction_history(db)
-    return jsonify(success=True)
+    with tracer.start_as_current_span("transactions_delete") as span:
+        span.set_attribute("service.name", "petadoptionshistory")
+        span.set_attribute("operation", "delete_transactions")
+        repository.delete_transaction_history(db)
+        return jsonify(success=True)
 
 @app.route('/health/status')
 def status_path():
-    repository.check_alive(db)
-    return jsonify(success=True)
+    with tracer.start_as_current_span("health_check") as span:
+        span.set_attribute("service.name", "petadoptionshistory")
+        repository.check_alive(db)
+        return jsonify(success=True)
+
+# Add Prometheus metrics endpoint
+@app.route('/metrics')
+def metrics():
+    return "Metrics endpoint", 200
