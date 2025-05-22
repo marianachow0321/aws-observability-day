@@ -10,7 +10,7 @@ The Python-based Pet Adoption History service has been updated and requires rebu
 ### Steps to rebuild the Docker image:
 1. Git clone repo
     ```bash
-    git clone https://github.com/marianachow0321/aws-observability-day.git
+    git clone https://github.com/marianachow0321/aws-observability-day.git --branch hotfix/psycopg-and-otel-compatibility-issue_v2
     ```
 
 2. Navigate to the petadoptionshistory-py directory:
