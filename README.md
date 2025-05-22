@@ -15,7 +15,7 @@ The Python-based Pet Adoption History service has been updated and requires rebu
 
 2. Navigate to the petadoptionshistory-py directory:
     ```bash
-    cd PetAdoptions/petadoptionshistory-py/
+    cd aws-observability-day/PetAdoptions/petadoptionshistory-py/
     ```
 
 3. Retrieve the ECR repository
